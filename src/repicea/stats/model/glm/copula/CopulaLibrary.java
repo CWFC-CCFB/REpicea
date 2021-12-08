@@ -136,21 +136,21 @@ public class CopulaLibrary {
 		/**
 		 * Constructor for a distance-dependent copula. <br>
 		 * <br>
-		 * The copula general parameter is calculated as exp(distance * beta) 
+		 * The copula general parameter is calculated as exp(distance1 * beta1 + distance2 * beta2) 
 		 * @param linkFunctionType the link function of the copula
 		 * @param hierarchicalLevelSpecifications the field that sets the hierarchical (e.g. plotID)
 		 * @param distanceFieldsEnumeration the fields that contains the x and y coordinates
-		 * @param parameterStartingValue the starting value of the beta parameter
+		 * @param parameterStartingValues the starting values of the beta parameters
 		 * @throws StatisticalDataException
 		 */
 		public DistanceLinkFunctionCopulaExpression(Type linkFunctionType,	
 				String hierarchicalLevelSpecifications, 
 				String distanceFieldsEnumeration, 
-				double parameterStartingValue) throws StatisticalDataException {
+				double... parameterStartingValues) throws StatisticalDataException {
 			super(hierarchicalLevelSpecifications);
 			this.distanceFieldsEnumeration = distanceFieldsEnumeration;
 			
-			Matrix beta = new Matrix(1,1,parameterStartingValue,0);
+			Matrix beta = new Matrix(parameterStartingValues);
 			setBeta(beta);
 		
 			linkFunction = new LinkFunction(linkFunctionType, getOriginalFunction());
@@ -174,16 +174,28 @@ public class CopulaLibrary {
 		protected void setX(int indexFirstObservation, int indexSecondObservation) {
 //			double distance = data.getDistancesBetweenObservations().get(indexFirstObservation).get(indexSecondObservation);
 			for (int dType = 0; dType < data.getDistancesBetweenObservations().size(); dType++) {
-				Map<Integer, Double> oMap = data.getDistancesBetweenObservations().get(dType).get(indexFirstObservation);
-				if (oMap != null) {
-					Double distance = oMap.get(indexSecondObservation);
-					if (distance != null) {
-						getOriginalFunction().setVariableValue(0, distance);
-						return;
-					}
-				}
-				getOriginalFunction().setVariableValue(dType, Double.POSITIVE_INFINITY);
+//				Map<Integer, Double> oMap = data.getDistancesBetweenObservations().get(dType).get(indexFirstObservation);
+//				if (oMap != null) {
+//					Double distance = oMap.get(indexSecondObservation);
+//					if (distance != null) {
+//						getOriginalFunction().setVariableValue(0, distance);
+//						return;
+//					}
+//				}
+//				getOriginalFunction().setVariableValue(dType, Double.POSITIVE_INFINITY);
+				getOriginalFunction().setVariableValue(dType, calculateDistance(dType, indexFirstObservation, indexSecondObservation));
 			}
+		}
+		
+		private double calculateDistance(int distanceType, int indexFirstObservation, int indexSecondObservation) {
+			Map<Integer, Double> oMap = data.getDistancesBetweenObservations().get(distanceType).get(indexFirstObservation);
+			if (oMap != null) {
+				Double distance = oMap.get(indexSecondObservation);
+				if (distance != null) {
+					return distance;
+				}
+			}
+			return Double.POSITIVE_INFINITY;
 		}
 		
 		@Override

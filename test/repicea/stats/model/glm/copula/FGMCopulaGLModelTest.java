@@ -94,20 +94,26 @@ public class FGMCopulaGLModelTest {
 //			copulaModel.doEstimation();
 //			copulaModel.getSummary();
 
-			
-			
-			CopulaExpression distanceCopula = new CopulaLibrary.DistanceLinkFunctionCopulaExpression(Type.Log, "newID_PE", "year.y", -.15);		// no intercept in the linear expression
+// DISTANCE COPULA (temporal) FOR NEWID_PE			
+//			CopulaExpression distanceCopula = new CopulaLibrary.DistanceLinkFunctionCopulaExpression(Type.Log, "newID_PE", "year.y", -.15);		// no intercept in the linear expression
 //			((DistanceLinkFunctionCopulaExpression) distanceCopula).setBounds(0, new ParameterBound(null, 0d));
+//			FGMCopulaGLModel copulaModel = new FGMCopulaGLModel(glm, distanceCopula);
+//			copulaModel.setConvergenceCriterion(1E-8);
+//			copulaModel.gridSearch(copulaModel.getParameters().m_iRows - 1, -.5d, -.1d, .05);
+//			copulaModel.doEstimation();
+//			copulaModel.getSummary();
+
+// DISTANCE COPULA (temporal + spatial)
+			CopulaExpression distanceCopula = new CopulaLibrary.DistanceLinkFunctionCopulaExpression(Type.Log, "whole", "longitudeDeg + latitudeDeg, year.y", -.15);		// no intercept in the linear expression
+			((DistanceLinkFunctionCopulaExpression) distanceCopula).setBounds(0, new ParameterBound(null, 0d));
 			FGMCopulaGLModel copulaModel = new FGMCopulaGLModel(glm, distanceCopula);
 			copulaModel.setConvergenceCriterion(1E-8);
 			copulaModel.gridSearch(copulaModel.getParameters().m_iRows - 1, -.5d, -.1d, .05);
 			copulaModel.doEstimation();
 			copulaModel.getSummary();
-//			double actual = distanceCopula.getBeta().getValueAt(0, 0);
-//			assertEquals(expectedCopulaValue, actual, 1E-5);
-//			double actualLlk = copulaModel.getCompleteLogLikelihood().getValue();
-//			assertEquals(expectedLlk, actualLlk, 1E-5);
-		} catch (StatisticalDataException e) {
+
+			
+		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		}
