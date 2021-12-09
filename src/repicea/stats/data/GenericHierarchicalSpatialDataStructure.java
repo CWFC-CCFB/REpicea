@@ -226,14 +226,16 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 	}
 
 	@Override
-	public void setDistanceCalculator(int distanceType, DistanceCalculator distanceCalculator) {	// could use a different calculator depending on the distance type
-		if (distanceCalculator == null) {
-			throw new InvalidParameterException("The distanceCalculator argument must be non null!");
+	public void setDistanceCalculators(DistanceCalculator... distanceCalculators) {	// could use a different calculator depending on the distance type
+		if (distanceCalculators == null) {
+			throw new InvalidParameterException("The distanceCalculators argument must be non null!");
 		}
-		if (distanceType >= distanceFields.size()) {
-			throw new InvalidParameterException("The distanceType is inconsistent! Please set the distance fields properly before setting the distance calculators!");
+		if (distanceCalculators.length != distanceFields.size()) {
+			throw new InvalidParameterException("The number of distance calculator instances is inconsistent! Please set the distance fields properly before setting the distance calculators!");
 		}
-		distCalcMap.put(distanceType, distanceCalculator);
+		for (int i = 0; i < distanceCalculators.length; i++) {
+			distCalcMap.put(i, distanceCalculators[i]);
+		}
 	}
 	
 	protected DistanceCalculator getDistanceCalculator(int distanceType) {

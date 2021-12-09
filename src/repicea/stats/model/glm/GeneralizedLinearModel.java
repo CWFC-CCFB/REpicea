@@ -159,7 +159,8 @@ public class GeneralizedLinearModel extends AbstractStatisticalModel<Hierarchica
 	@Override
 	public Matrix getPredicted() {
 		if (getEstimator().isConvergenceAchieved()) {
-			getCompleteLogLikelihood().setBeta(getEstimator().getParameterEstimates().getMean());
+			setParameters(getEstimator().getParameterEstimates().getMean());
+//			getCompleteLogLikelihood().setBeta(getEstimator().getParameterEstimates().getMean());
 			return getCompleteLogLikelihood().getPredictions();
 		} else {
 			return null;

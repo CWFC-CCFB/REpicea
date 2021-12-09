@@ -46,17 +46,7 @@ public class CopulaLibrary {
 	 * This interface only identifies the copulas that take into account the distance between the individual.
 	 * @author Mathieu Fortin - October 2011
 	 */
-	static interface DistanceCopula {
-
-		/**
-		 * Set a distance calculator for the copula.
-		 * @param calc a DistanceCalculator instance
-		 */
-		public void setDistanceCalculator(DistanceCalculator calc);
-		
-		public DistanceCalculator getDistanceCalculator();
-		
-	}
+	static interface DistanceCopula {}
 	
 	/**
 	 * This copula is a simple copula with one constant parameter.
@@ -144,7 +134,7 @@ public class CopulaLibrary {
 		protected final String distanceFieldsEnumeration;
 		protected HierarchicalSpatialDataStructure data;
 		private final List<Double> distanceLimits;
-		private DistanceCalculator distCalc;
+		private final DistanceCalculator[] distCalculators;
 		
 		/**
 		 * Constructor for a distance-dependent copula. <br>
@@ -160,19 +150,32 @@ public class CopulaLibrary {
 				String hierarchicalLevelSpecifications, 
 				String distanceFieldsEnumeration, 
 				List<Double> distanceLimits,
+				List<DistanceCalculator> distanceCalculators,
 				double... parameterStartingValues) throws StatisticalDataException {
 			super(hierarchicalLevelSpecifications);
+			if (distanceCalculators != null) {
+				distCalculators = distanceCalculators.toArray(new DistanceCalculator[] {});
+			} else {
+				distCalculators = null;
+			}
 			this.distanceFieldsEnumeration = distanceFieldsEnumeration;
 			this.distanceLimits = new ArrayList<Double>();
 			if (distanceLimits != null) {
 				this.distanceLimits.addAll(distanceLimits);
-			}
+			} 
 			Matrix beta = new Matrix(parameterStartingValues);
 			setBeta(beta);
 		
 			linkFunction = new LinkFunction(linkFunctionType, getOriginalFunction());
 		}
 		
+		public DistanceLinkFunctionCopulaExpression(Type linkFunctionType,	
+				String hierarchicalLevelSpecifications, 
+				String distanceFieldsEnumeration, 
+				List<Double> distanceLimits,
+				double... parameterStartingValues) throws StatisticalDataException {
+			this(linkFunctionType, hierarchicalLevelSpecifications, distanceFieldsEnumeration, distanceLimits, null, parameterStartingValues);
+		}		
 		
 		@Override
 		public Double getValue() {return linkFunction.getValue();}
@@ -235,30 +238,15 @@ public class CopulaLibrary {
 			} else {
 				this.data = (HierarchicalSpatialDataStructure) data;
 				this.data.setDistanceFields(distanceParameterization);
-//				if (getDistanceCalculator() != null) {
-//					this.data.setDistanceCalculator(getDistanceCalculator());
-//				}
+				if (distCalculators != null) {
+					this.data.setDistanceCalculators(distCalculators);
+				}
 				if (!distanceLimits.isEmpty()) {
 					this.data.setDistanceLimits(distanceLimits);
 				}
 				this.data.getDistancesBetweenObservations();
 			}
 		}
-
-
-		@Override
-		public void setDistanceCalculator(DistanceCalculator calc) {
-			if (calc != null) {
-				distCalc = calc;			
-			}
-		}
-
-
-		@Override
-		public DistanceCalculator getDistanceCalculator() {
-			return distCalc;
-		}
-	
 	}
 
 	

@@ -66,9 +66,8 @@ public interface HierarchicalSpatialDataStructure extends HierarchicalStatistica
 	/**
 	 * Set the distance calculator in the HierarchicalSpatialDataStructure instance. <br>
 	 * <br>
-	 * @param distanceType 
-	 * @param distanceCalculator
+	 * @param distanceCalculators an array of distance calculator instances
 	 */
-	public void setDistanceCalculator(int distanceType, DistanceCalculator distanceCalculator);
+	public void setDistanceCalculators(DistanceCalculator... distanceCalculators);
 	
 }
