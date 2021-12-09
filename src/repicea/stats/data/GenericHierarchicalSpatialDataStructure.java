@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import repicea.math.Matrix;
-
 /**
  * This class is the basic class for a hierarchical and spatial data structure.
  * @author Mathieu Fortin - October 2011
@@ -37,6 +35,7 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 	protected List<List<String>> distanceFields;
 	protected boolean distanceCalculated;
 	protected final List<Double> distanceLimits;
+	protected final Map<Integer, DistanceCalculator> distCalcMap;
 //	protected Map<Integer, Map<Integer, Matrix>> angleMap;
 //	protected boolean angleCalculated;
 		
@@ -50,7 +49,8 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 //		angleMap = new HashMap<Integer, Map<Integer, Matrix>>();
 		distanceFields = new ArrayList<List<String>>();
 		distanceLimits = new ArrayList<Double>();
-	}
+		distCalcMap = new HashMap<Integer, DistanceCalculator>();
+}
 
 	@Override
 	public void setDistanceFields(List<List<String>> fields) {
@@ -80,19 +80,21 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
  						for (int i = 0; i < nbObs; i++) {
  							indexA = observationIndex.get(i);
  							outer:
- 							for (int dType = 0; dType < nbDistanceTypes; dType++) {
- 	 							tmpMap = new TreeMap<Integer, Double>();
- 	 							for (int j = i + 1; j < nbObs; j++) {
- 	 								indexB = observationIndex.get(j);
- 	 								double distance = getDistanceBetweenObservations(dType, indexA, indexB);
- 	 								if (distance > getLimit(dType)) {
- 	 									break outer;
- 	 								}
- 	 								tmpMap.put(indexB, distance);
- 	 	 							distanceMapList.get(dType).put(indexA, tmpMap);
- 	 							}
- 								
- 							}
+ 								for (int j = i + 1; j < nbObs; j++) {
+ 									indexB = observationIndex.get(j);
+ 									for (int dType = 0; dType < nbDistanceTypes; dType++) {
+ 										if (!distanceMapList.get(dType).containsKey(indexA)) {
+ 											distanceMapList.get(dType).put(indexA, new HashMap<Integer,Double>());
+ 										}
+// 										tmpMap = new TreeMap<Integer, Double>();
+ 										double distance = getDistanceBetweenObservations(dType, indexA, indexB);
+ 										if (distance > getLimit(dType)) {
+ 											break outer;
+ 										}
+// 										tmpMap.put(indexB, distance);
+ 										distanceMapList.get(dType).get(indexA).put(indexB, distance);
+ 									}
+ 								}
  						}
  					}
  				}
@@ -191,24 +193,27 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 		if (type >= distanceFields.size()) {
 			throw new InvalidParameterException("There are not enough distance types to compute the " + type + "th distance type!");
 		}
-		List<String> distanceType = distanceFields.get(type);
-		int nbDimensions = distanceType.size();
-		double ssDifferences = 0;
-		String fieldName;
-		double diff;
-		Object valueA;
-		Object valueB;
-		
-		for (int i = 0; i < nbDimensions; i++) {
-			fieldName = distanceType.get(i);
-			int indexOfThisField = dataSet.getIndexOfThisField(fieldName);
-			valueA = dataSet.getValueAt(indexA, indexOfThisField);
-			valueB = dataSet.getValueAt(indexB, indexOfThisField);
-			diff = ((Number) valueA).doubleValue() - ((Number) valueB).doubleValue();
-			ssDifferences += diff * diff;
-		}
-		
-		return Math.sqrt(ssDifferences);
+		List<String> distanceTypeFields = distanceFields.get(type);
+		return getDistanceCalculator(type).calculateDistance(distanceTypeFields, dataSet, indexA, indexB);
+//		
+//		
+//		int nbDimensions = distanceType.size();
+//		double ssDifferences = 0;
+//		String fieldName;
+//		double diff;
+//		Object valueA;
+//		Object valueB;
+//		
+//		for (int i = 0; i < nbDimensions; i++) {
+//			fieldName = distanceType.get(i);
+//			int indexOfThisField = dataSet.getIndexOfThisField(fieldName);
+//			valueA = dataSet.getValueAt(indexA, indexOfThisField);
+//			valueB = dataSet.getValueAt(indexB, indexOfThisField);
+//			diff = ((Number) valueA).doubleValue() - ((Number) valueB).doubleValue();
+//			ssDifferences += diff * diff;
+//		}
+//		
+//		return Math.sqrt(ssDifferences);
 	}
 
 	@Override
@@ -218,6 +223,27 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 		}
 		this.distanceLimits.clear();
 		this.distanceLimits.addAll(limits);
+	}
+
+	@Override
+	public void setDistanceCalculator(int distanceType, DistanceCalculator distanceCalculator) {	// could use a different calculator depending on the distance type
+		if (distanceCalculator == null) {
+			throw new InvalidParameterException("The distanceCalculator argument must be non null!");
+		}
+		if (distanceType >= distanceFields.size()) {
+			throw new InvalidParameterException("The distanceType is inconsistent! Please set the distance fields properly before setting the distance calculators!");
+		}
+		distCalcMap.put(distanceType, distanceCalculator);
+	}
+	
+	protected DistanceCalculator getDistanceCalculator(int distanceType) {
+		if (distanceType >= distanceFields.size()) {
+			throw new InvalidParameterException("The distanceType is inconsistent! Please set the distance fields properly before setting the distance calculators!");
+		}
+		if (!distCalcMap.containsKey(distanceType)) {
+			distCalcMap.put(distanceType, new DistanceCalculator.EuclidianDistanceCalculator());
+		}
+		return distCalcMap.get(distanceType);
 	}
 	
 }

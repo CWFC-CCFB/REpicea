@@ -32,7 +32,11 @@ public interface Estimator {
 	 * @return an Estimate instance
 	 */
 	public Estimate<?> getParameterEstimates();
-	
-	
+
+	/**
+	 * Enable/disable verbose
+	 * @param bool
+	 */
+	public void setVerboseEnabled(boolean bool);
 	
 }

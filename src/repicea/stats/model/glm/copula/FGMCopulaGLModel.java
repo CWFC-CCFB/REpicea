@@ -22,7 +22,6 @@ import java.security.InvalidParameterException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import repicea.math.Matrix;
 import repicea.stats.data.DataSet;
@@ -112,6 +111,9 @@ public class FGMCopulaGLModel extends GeneralizedLinearModel {
 	 */
 	@SuppressWarnings("unchecked")
 	public void gridSearch(int parameterName, double start, double end, double step) {
+		if (start >= end) {
+			throw new InvalidParameterException("The argument end must be greater than the start argument!");
+		}
 		System.out.println("Initializing grid search...");
 		ArrayList<LikelihoodValue> likelihoodValues = new ArrayList<LikelihoodValue>();
 		Matrix originalParameters = getParameters();

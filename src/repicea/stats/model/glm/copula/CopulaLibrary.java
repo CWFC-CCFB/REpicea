@@ -26,6 +26,7 @@ import java.util.Map;
 
 import repicea.math.Matrix;
 import repicea.math.ParameterBound;
+import repicea.stats.data.DistanceCalculator;
 import repicea.stats.data.HierarchicalSpatialDataStructure;
 import repicea.stats.data.HierarchicalStatisticalDataStructure;
 import repicea.stats.data.StatisticalDataException;
@@ -45,7 +46,17 @@ public class CopulaLibrary {
 	 * This interface only identifies the copulas that take into account the distance between the individual.
 	 * @author Mathieu Fortin - October 2011
 	 */
-	static interface DistanceCopula {}
+	static interface DistanceCopula {
+
+		/**
+		 * Set a distance calculator for the copula.
+		 * @param calc a DistanceCalculator instance
+		 */
+		public void setDistanceCalculator(DistanceCalculator calc);
+		
+		public DistanceCalculator getDistanceCalculator();
+		
+	}
 	
 	/**
 	 * This copula is a simple copula with one constant parameter.
@@ -72,7 +83,7 @@ public class CopulaLibrary {
 		 * This method is not necessary for this copula since the parameter is constant
 		 */
 		@Override
-		protected void setX(int indexFirstObservation, int indexSecondObservation) {}
+		protected boolean setX(int indexFirstObservation, int indexSecondObservation) {return true;}
 
 		@Override
 		protected void initialize(StatisticalModel<?> model, HierarchicalStatisticalDataStructure data) throws StatisticalDataException {
@@ -109,7 +120,7 @@ public class CopulaLibrary {
 		public Matrix getHessian() {return linkFunction.getHessian();}
 
 		@Override
-		protected void setX(int indexFirstObservation, int indexSecondObservation) {}
+		protected boolean setX(int indexFirstObservation, int indexSecondObservation) {return true;}
 		
 		@Override
 		public int getNumberOfVariables() {return getOriginalFunction().getNumberOfVariables();}
@@ -133,6 +144,7 @@ public class CopulaLibrary {
 		protected final String distanceFieldsEnumeration;
 		protected HierarchicalSpatialDataStructure data;
 		private final List<Double> distanceLimits;
+		private DistanceCalculator distCalc;
 		
 		/**
 		 * Constructor for a distance-dependent copula. <br>
@@ -176,10 +188,16 @@ public class CopulaLibrary {
 		public void setX(Matrix x) {}
 		
 		@Override
-		protected void setX(int indexFirstObservation, int indexSecondObservation) {
+		protected boolean setX(int indexFirstObservation, int indexSecondObservation) {
 			for (int dType = 0; dType < data.getDistancesBetweenObservations().size(); dType++) {
-				getOriginalFunction().setVariableValue(dType, calculateDistance(dType, indexFirstObservation, indexSecondObservation));
+				double dist = calculateDistance(dType, indexFirstObservation, indexSecondObservation);
+				if (Double.isInfinite(dist)) {
+					return false;
+				} else {
+					getOriginalFunction().setVariableValue(dType, dist);
+				}
 			}
+			return true;
 		}
 		
 		private double calculateDistance(int distanceType, int indexFirstObservation, int indexSecondObservation) {
@@ -217,11 +235,28 @@ public class CopulaLibrary {
 			} else {
 				this.data = (HierarchicalSpatialDataStructure) data;
 				this.data.setDistanceFields(distanceParameterization);
+//				if (getDistanceCalculator() != null) {
+//					this.data.setDistanceCalculator(getDistanceCalculator());
+//				}
 				if (!distanceLimits.isEmpty()) {
 					this.data.setDistanceLimits(distanceLimits);
 				}
 				this.data.getDistancesBetweenObservations();
 			}
+		}
+
+
+		@Override
+		public void setDistanceCalculator(DistanceCalculator calc) {
+			if (calc != null) {
+				distCalc = calc;			
+			}
+		}
+
+
+		@Override
+		public DistanceCalculator getDistanceCalculator() {
+			return distCalc;
 		}
 	
 	}

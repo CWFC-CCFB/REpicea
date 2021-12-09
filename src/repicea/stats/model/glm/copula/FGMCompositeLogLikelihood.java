@@ -150,10 +150,10 @@ public class FGMCompositeLogLikelihood extends CompositeLogLikelihood implements
 							multiplyingFactor = -1d;
 						}
 
-						copulaExpression.setX(indexFirstObservation, indexSecondObservation);
-						double copulaValue = copulaExpression.getValue();
-
-						additionalTerm += multiplyingFactor * copulaValue * (1 - likelihoodFirst) * (1 - likelihoodSecond);
+						if (copulaExpression.setX(indexFirstObservation, indexSecondObservation)) {
+							double copulaValue = copulaExpression.getValue();
+							additionalTerm += multiplyingFactor * copulaValue * (1 - likelihoodFirst) * (1 - likelihoodSecond);
+						}
 					}
 				}
 				results.put(index, additionalTerm);
@@ -214,21 +214,21 @@ public class FGMCompositeLogLikelihood extends CompositeLogLikelihood implements
 							multiplyingFactor = -1d;
 						}
 
-						copulaExpression.setX(indexFirstObservation, indexSecondObservation);
-						double copulaValue = copulaExpression.getValue();
+						if (copulaExpression.setX(indexFirstObservation, indexSecondObservation)) {
+							double copulaValue = copulaExpression.getValue();
 
-						Matrix expansion1 = du_dbetaFirst.scalarMultiply((1 - likelihoodSecond) * -1d).add(
-								du_dbetaSecond.scalarMultiply((1 - likelihoodFirst) * -1d)).scalarMultiply(copulaValue * multiplyingFactor * inverseAdditionalLikelihoodTerm);
+							Matrix expansion1 = du_dbetaFirst.scalarMultiply((1 - likelihoodSecond) * -1d).add(
+									du_dbetaSecond.scalarMultiply((1 - likelihoodFirst) * -1d)).scalarMultiply(copulaValue * multiplyingFactor * inverseAdditionalLikelihoodTerm);
 
-						Matrix expansion2 = copulaExpression.getGradient().scalarMultiply((1 - likelihoodFirst) * 
-								(1 - likelihoodSecond) * 
-								multiplyingFactor * 
-								inverseAdditionalLikelihoodTerm);
+							Matrix expansion2 = copulaExpression.getGradient().scalarMultiply((1 - likelihoodFirst) * 
+									(1 - likelihoodSecond) * 
+									multiplyingFactor * 
+									inverseAdditionalLikelihoodTerm);
 
-						tmp = expansion1.matrixStack(expansion2, true);
+							tmp = expansion1.matrixStack(expansion2, true);
 
-						MatrixUtility.add(additionalGradient, tmp);
-
+							MatrixUtility.add(additionalGradient, tmp);
+						}
 					}
 				}
 
@@ -302,28 +302,28 @@ public class FGMCompositeLogLikelihood extends CompositeLogLikelihood implements
 							multiplyingFactor = -1d;
 						}
 
-						copulaExpression.setX(indexFirstObservation, indexSecondObservation);
-						double copulaValue = copulaExpression.getValue();
-						Matrix copulaGradient = copulaExpression.getGradient();
-						Matrix copulaHessian = copulaExpression.getHessian();
+						if (copulaExpression.setX(indexFirstObservation, indexSecondObservation)) {
+							double copulaValue = copulaExpression.getValue();
+							Matrix copulaGradient = copulaExpression.getGradient();
+							Matrix copulaHessian = copulaExpression.getHessian();
 
-						Matrix gradientMultipliedTemp = du_dbetaFirst.multiply(du_dbetaSecond.transpose());
+							Matrix gradientMultipliedTemp = du_dbetaFirst.multiply(du_dbetaSecond.transpose());
 
-						Matrix expansion11 = d2u_d2betaFirst.scalarMultiply((1 - likelihoodSecond) * -1d).add(
-								d2u_d2betaSecond.scalarMultiply((1 - likelihoodFirst) * -1d)).add(							
-										gradientMultipliedTemp.add(gradientMultipliedTemp.transpose())).scalarMultiply(
-												copulaValue * multiplyingFactor * inverseAdditionalLikelihoodTerm);
+							Matrix expansion11 = d2u_d2betaFirst.scalarMultiply((1 - likelihoodSecond) * -1d).add(
+									d2u_d2betaSecond.scalarMultiply((1 - likelihoodFirst) * -1d)).add(							
+											gradientMultipliedTemp.add(gradientMultipliedTemp.transpose())).scalarMultiply(
+													copulaValue * multiplyingFactor * inverseAdditionalLikelihoodTerm);
 
 
-						Matrix expansion12 = du_dbetaFirst.scalarMultiply((1 - likelihoodSecond) * -1d).add(
-								du_dbetaSecond.scalarMultiply((1 - likelihoodFirst) * -1d)).multiply(copulaGradient.transpose()).scalarMultiply(multiplyingFactor * inverseAdditionalLikelihoodTerm);
+							Matrix expansion12 = du_dbetaFirst.scalarMultiply((1 - likelihoodSecond) * -1d).add(
+									du_dbetaSecond.scalarMultiply((1 - likelihoodFirst) * -1d)).multiply(copulaGradient.transpose()).scalarMultiply(multiplyingFactor * inverseAdditionalLikelihoodTerm);
 
-						Matrix expansion22 = copulaHessian.scalarMultiply((1 - likelihoodFirst) * (1 - likelihoodSecond) * multiplyingFactor * inverseAdditionalLikelihoodTerm);
+							Matrix expansion22 = copulaHessian.scalarMultiply((1 - likelihoodFirst) * (1 - likelihoodSecond) * multiplyingFactor * inverseAdditionalLikelihoodTerm);
 
-						tmp = expansion11.matrixStack(expansion12, false).matrixStack(expansion12.transpose().matrixStack(expansion22, false), true);
+							tmp = expansion11.matrixStack(expansion12, false).matrixStack(expansion12.transpose().matrixStack(expansion22, false), true);
 
-						MatrixUtility.add(additionalHessian, tmp);
-
+							MatrixUtility.add(additionalHessian, tmp);
+						}
 					}
 				}
 

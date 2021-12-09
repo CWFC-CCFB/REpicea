@@ -62,5 +62,13 @@ public interface HierarchicalSpatialDataStructure extends HierarchicalStatistica
 	 * @param limits a List of doubles whose size should match the number of parameters and distance types
 	 */
 	public void setDistanceLimits(List<Double> limits);
+
+	/**
+	 * Set the distance calculator in the HierarchicalSpatialDataStructure instance. <br>
+	 * <br>
+	 * @param distanceType 
+	 * @param distanceCalculator
+	 */
+	public void setDistanceCalculator(int distanceType, DistanceCalculator distanceCalculator);
 	
 }

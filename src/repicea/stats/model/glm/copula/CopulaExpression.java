@@ -52,7 +52,16 @@ public abstract class CopulaExpression extends AbstractMathematicalFunctionWrapp
 	
 	protected List<String> getHierarchicalLevelSpecifications() {return levels;}
 	
-	protected abstract void setX(int indexFirstObservation, int indexSecondObservation);
+	/**
+	 * Set the distance(s) between two observations into the copula. <br>
+	 * <br>
+	 * The boolean that results from this method is equal to false if one of the distance(s) is infinite. This makes
+	 * it possible to avoid unncessary computation since the copula term is equal to 0 in such a context.
+	 * @param indexFirstObservation
+	 * @param indexSecondObservation
+	 * @return a boolean false if the distance is infinite 
+	 */
+	protected abstract boolean setX(int indexFirstObservation, int indexSecondObservation);
 	
 	protected void initialize(StatisticalModel<?> model, HierarchicalStatisticalDataStructure data) throws StatisticalDataException {
 		data.setHierarchicalStructureLevel(levels);

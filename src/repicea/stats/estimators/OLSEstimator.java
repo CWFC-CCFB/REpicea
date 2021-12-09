@@ -35,6 +35,7 @@ public class OLSEstimator implements Estimator {
 	private VarianceEstimate residualVariance;
 	private boolean hasConverged;
 	private Estimate<?> betaVector;
+	private boolean verbose;
 	
 	@Override
 	public boolean doEstimation(StatisticalModel<? extends StatisticalDataStructure> model)	throws EstimatorException {
@@ -50,7 +51,11 @@ public class OLSEstimator implements Estimator {
 		model.setParameters(betaVector.getMean());
 		Matrix residual = model.getResiduals();
 		int degreesOfFreedom = model.getDataStructure().getNumberOfObservations() - betaVector.getMean().m_iRows;
-		double resVar = residual.transpose().multiply(residual).scalarMultiply(1d / degreesOfFreedom).getValueAt(0, 0);
+		double sse = residual.transpose().multiply(residual).getValueAt(0, 0);
+		if (verbose) {
+			System.out.println("Sum of squared errors = " + sse);
+		}
+		double resVar = sse / degreesOfFreedom;
 		residualVariance = new VarianceEstimate(degreesOfFreedom, resVar);
 		((GaussianEstimate) betaVector).setVariance(inverseProduct.scalarMultiply(resVar));
 		return true;
@@ -71,6 +76,9 @@ public class OLSEstimator implements Estimator {
 	public Estimate<?> getParameterEstimates() {
 		return betaVector;
 	}
+
+	@Override
+	public void setVerboseEnabled(boolean bool) {verbose = bool;}
 	
 	
 }
