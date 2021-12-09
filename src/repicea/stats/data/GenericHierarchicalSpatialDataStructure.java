@@ -33,12 +33,12 @@ import repicea.math.Matrix;
  */
 public class GenericHierarchicalSpatialDataStructure extends GenericHierarchicalStatisticalDataStructure implements HierarchicalSpatialDataStructure {
 
-	protected List<Map<Integer, Map<Integer, Double>>> distanceMapList;
+	protected final List<Map<Integer, Map<Integer, Double>>> distanceMapList;
 	protected List<List<String>> distanceFields;
 	protected boolean distanceCalculated;
-	
-	protected Map<Integer, Map<Integer, Matrix>> angleMap;
-	protected boolean angleCalculated;
+	protected final List<Double> distanceLimits;
+//	protected Map<Integer, Map<Integer, Matrix>> angleMap;
+//	protected boolean angleCalculated;
 		
 	/**
 	 * General constructor. To be implemented in derived class.
@@ -47,13 +47,15 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 	public GenericHierarchicalSpatialDataStructure(DataSet dataSet) {
 		super(dataSet);
 		distanceMapList = new ArrayList<Map<Integer, Map<Integer, Double>>>();
-		angleMap = new HashMap<Integer, Map<Integer, Matrix>>();
+//		angleMap = new HashMap<Integer, Map<Integer, Matrix>>();
 		distanceFields = new ArrayList<List<String>>();
+		distanceLimits = new ArrayList<Double>();
 	}
 
 	@Override
 	public void setDistanceFields(List<List<String>> fields) {
-		distanceFields= fields;
+		distanceLimits.clear();
+		distanceFields = fields;
 	}
 
 	@Override
@@ -77,14 +79,17 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
  						int indexB;
  						for (int i = 0; i < nbObs; i++) {
  							indexA = observationIndex.get(i);
+ 							outer:
  							for (int dType = 0; dType < nbDistanceTypes; dType++) {
  	 							tmpMap = new TreeMap<Integer, Double>();
- 	 							distanceMapList.get(dType).put(indexA, tmpMap);
-// 	 							for (int j = 0; j < nbObs; j++) {
  	 							for (int j = i + 1; j < nbObs; j++) {
  	 								indexB = observationIndex.get(j);
  	 								double distance = getDistanceBetweenObservations(dType, indexA, indexB);
+ 	 								if (distance > getLimit(dType)) {
+ 	 									break outer;
+ 	 								}
  	 								tmpMap.put(indexB, distance);
+ 	 	 							distanceMapList.get(dType).put(indexA, tmpMap);
  	 							}
  								
  							}
@@ -99,6 +104,13 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
  		}
 	}
 
+	private double getLimit(int dType) {
+		if (!distanceLimits.isEmpty()) {
+			return distanceLimits.get(dType);
+		} else {
+			return Double.POSITIVE_INFINITY;
+		}
+	}
 	
 //	@Override
 //	public Map<Integer, Map<Integer, Matrix>> getAngleBetweenObservations() {
@@ -197,6 +209,15 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 		}
 		
 		return Math.sqrt(ssDifferences);
+	}
+
+	@Override
+	public void setDistanceLimits(List<Double> limits) {
+		if (distanceFields.size() != limits.size()) {
+			throw new InvalidParameterException("The number of limits in the limits argument is inconsistent: expected " + distanceFields.size() + " instead of " + limits.size());
+		}
+		this.distanceLimits.clear();
+		this.distanceLimits.addAll(limits);
 	}
 	
 }

@@ -1,7 +1,7 @@
 /*
- * This file is part of the repicea-statistics library.
+ * This file is part of the repicea library.
  *
- * Copyright (C) 2009-2012 Mathieu Fortin for Rouge-Epicea
+ * Copyright (C) 2009-2021 Mathieu Fortin for Rouge-Epicea
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 package repicea.stats.model.glm.copula;
 
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -128,11 +129,11 @@ public class CopulaLibrary {
 	 */
 	public static class DistanceLinkFunctionCopulaExpression extends CopulaExpression implements DistanceCopula {
 
-		protected LinkFunction linkFunction;
-		protected Matrix matrixX;
-		protected String distanceFieldsEnumeration;
+		protected final LinkFunction linkFunction;
+		protected final String distanceFieldsEnumeration;
 		protected HierarchicalSpatialDataStructure data;
-				
+		private final List<Double> distanceLimits;
+		
 		/**
 		 * Constructor for a distance-dependent copula. <br>
 		 * <br>
@@ -146,10 +147,14 @@ public class CopulaLibrary {
 		public DistanceLinkFunctionCopulaExpression(Type linkFunctionType,	
 				String hierarchicalLevelSpecifications, 
 				String distanceFieldsEnumeration, 
+				List<Double> distanceLimits,
 				double... parameterStartingValues) throws StatisticalDataException {
 			super(hierarchicalLevelSpecifications);
 			this.distanceFieldsEnumeration = distanceFieldsEnumeration;
-			
+			this.distanceLimits = new ArrayList<Double>();
+			if (distanceLimits != null) {
+				this.distanceLimits.addAll(distanceLimits);
+			}
 			Matrix beta = new Matrix(parameterStartingValues);
 			setBeta(beta);
 		
@@ -172,17 +177,7 @@ public class CopulaLibrary {
 		
 		@Override
 		protected void setX(int indexFirstObservation, int indexSecondObservation) {
-//			double distance = data.getDistancesBetweenObservations().get(indexFirstObservation).get(indexSecondObservation);
 			for (int dType = 0; dType < data.getDistancesBetweenObservations().size(); dType++) {
-//				Map<Integer, Double> oMap = data.getDistancesBetweenObservations().get(dType).get(indexFirstObservation);
-//				if (oMap != null) {
-//					Double distance = oMap.get(indexSecondObservation);
-//					if (distance != null) {
-//						getOriginalFunction().setVariableValue(0, distance);
-//						return;
-//					}
-//				}
-//				getOriginalFunction().setVariableValue(dType, Double.POSITIVE_INFINITY);
 				getOriginalFunction().setVariableValue(dType, calculateDistance(dType, indexFirstObservation, indexSecondObservation));
 			}
 		}
@@ -210,15 +205,21 @@ public class CopulaLibrary {
 		protected void initialize(StatisticalModel<?> model, HierarchicalStatisticalDataStructure data) throws StatisticalDataException {
 			super.initialize(model, data);
 			List<List<String>> distanceParameterization = new ArrayList<List<String>>();
-			List<String> distanceDimensions = ObjectUtility.decomposeUsingToken(distanceFieldsEnumeration, ",");
-			for (String dim : distanceDimensions) {
-				distanceParameterization.add(ObjectUtility.decomposeUsingToken(dim, "+"));
+			List<String> distanceTypes = ObjectUtility.decomposeUsingToken(distanceFieldsEnumeration, ",");
+			if (distanceTypes.size() != this.getBeta().m_iRows) {
+				throw new InvalidParameterException("Expected " + getBeta().m_iRows + " distance types instead of the " + distanceTypes.size() + " specified!");
+			}
+			for (String type : distanceTypes) {
+				distanceParameterization.add(ObjectUtility.decomposeUsingToken(type, "+"));
 			}
 			if (!(data instanceof HierarchicalSpatialDataStructure)) {
 				throw new StatisticalDataException("The data are not spatialized.");
 			} else {
 				this.data = (HierarchicalSpatialDataStructure) data;
 				this.data.setDistanceFields(distanceParameterization);
+				if (!distanceLimits.isEmpty()) {
+					this.data.setDistanceLimits(distanceLimits);
+				}
 				this.data.getDistancesBetweenObservations();
 			}
 		}

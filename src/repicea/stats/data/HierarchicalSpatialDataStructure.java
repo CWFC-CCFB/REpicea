@@ -53,4 +53,14 @@ public interface HierarchicalSpatialDataStructure extends HierarchicalStatistica
 	 */
 	public void setDistanceFields(List<List<String>> fields);
 	
+	
+	/**
+	 * Set the limits beyond which the distance is considered to be infinite. <br>
+	 * <br>
+	 * This feature avoid calculating unnecessary distances.
+	 * 
+	 * @param limits a List of doubles whose size should match the number of parameters and distance types
+	 */
+	public void setDistanceLimits(List<Double> limits);
+	
 }

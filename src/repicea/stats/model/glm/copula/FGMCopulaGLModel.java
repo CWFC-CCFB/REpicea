@@ -22,13 +22,13 @@ import java.security.InvalidParameterException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import repicea.math.Matrix;
 import repicea.stats.data.DataSet;
 import repicea.stats.data.GenericHierarchicalSpatialDataStructure;
 import repicea.stats.data.HierarchicalStatisticalDataStructure;
 import repicea.stats.data.StatisticalDataException;
-import repicea.stats.estimates.CorrelationEstimate;
 import repicea.stats.model.glm.GeneralizedLinearModel;
 
 /**
@@ -142,7 +142,7 @@ public class FGMCopulaGLModel extends GeneralizedLinearModel {
 			setParameters(bestFittingParameters);
 		}
 	}
-	
+
 	@Override
 	protected void setCompleteLLK() {completeLLK = new FGMCompositeLogLikelihood(individualLLK,	matrixX, y,	getDataStructure(),	copula);}
 	
