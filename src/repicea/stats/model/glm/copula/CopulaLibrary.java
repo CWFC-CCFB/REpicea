@@ -135,6 +135,8 @@ public class CopulaLibrary {
 		protected HierarchicalSpatialDataStructure data;
 		private final List<Double> distanceLimits;
 		private final DistanceCalculator[] distCalculators;
+		private final boolean isInterceptEnabled;
+		private final boolean isStrictlyPositive;
 		
 		/**
 		 * Constructor for a distance-dependent copula. <br>
@@ -143,22 +145,32 @@ public class CopulaLibrary {
 		 * @param linkFunctionType the link function of the copula
 		 * @param hierarchicalLevelSpecifications the field that sets the hierarchical (e.g. plotID)
 		 * @param distanceFieldsEnumeration the fields that contains the x and y coordinates
+		 * @param isInterceptEnabled true to enable the intercept in the linear term
 		 * @param parameterStartingValues the starting values of the beta parameters
 		 * @throws StatisticalDataException
 		 */
 		public DistanceLinkFunctionCopulaExpression(Type linkFunctionType,	
 				String hierarchicalLevelSpecifications, 
 				String distanceFieldsEnumeration, 
+				boolean isInterceptEnabled,
+				boolean isStrictlyPositive,
 				List<Double> distanceLimits,
 				List<DistanceCalculator> distanceCalculators,
 				double... parameterStartingValues) throws StatisticalDataException {
 			super(hierarchicalLevelSpecifications);
+			this.isInterceptEnabled = isInterceptEnabled; 
+			this.isStrictlyPositive = isStrictlyPositive;
 			if (distanceCalculators != null) {
 				distCalculators = distanceCalculators.toArray(new DistanceCalculator[] {});
 			} else {
 				distCalculators = null;
 			}
 			this.distanceFieldsEnumeration = distanceFieldsEnumeration;
+			int nbDistanceTypes = distanceFieldsEnumeration.split(",").length;
+			int nbParametersRequired = this.isInterceptEnabled ? nbDistanceTypes + 1 : nbDistanceTypes;
+			if (nbParametersRequired != parameterStartingValues.length) {
+				throw new InvalidParameterException("The number of parameters is inconsistent: expected " + nbParametersRequired + " but there is " + parameterStartingValues.length + " !"); 
+			}
 			this.distanceLimits = new ArrayList<Double>();
 			if (distanceLimits != null) {
 				this.distanceLimits.addAll(distanceLimits);
@@ -167,24 +179,45 @@ public class CopulaLibrary {
 			setBeta(beta);
 		
 			linkFunction = new LinkFunction(linkFunctionType, getOriginalFunction());
+			if (this.isInterceptEnabled) {
+				getOriginalFunction().setVariableValue(0, 1d);
+			}
 		}
 		
 		public DistanceLinkFunctionCopulaExpression(Type linkFunctionType,	
 				String hierarchicalLevelSpecifications, 
 				String distanceFieldsEnumeration, 
+				boolean isInterceptEnabled,
+				boolean isStrictlyPositive,
 				List<Double> distanceLimits,
 				double... parameterStartingValues) throws StatisticalDataException {
-			this(linkFunctionType, hierarchicalLevelSpecifications, distanceFieldsEnumeration, distanceLimits, null, parameterStartingValues);
+			this(linkFunctionType, 
+					hierarchicalLevelSpecifications, 
+					distanceFieldsEnumeration, 
+					isInterceptEnabled, 
+					isStrictlyPositive,
+					distanceLimits, 
+					null, 
+					parameterStartingValues);
 		}		
 		
 		@Override
-		public Double getValue() {return linkFunction.getValue();}
+		public Double getValue() {
+			double result = isStrictlyPositive ? linkFunction.getValue() : -1 + 2 * linkFunction.getValue();
+			return result;
+		}
 
 		@Override
-		public Matrix getGradient() {return linkFunction.getGradient();}
+		public Matrix getGradient() {
+			Matrix result = isStrictlyPositive ? linkFunction.getGradient() : linkFunction.getGradient().scalarMultiply(2d);
+			return result;
+		}
 
 		@Override
-		public Matrix getHessian() {return linkFunction.getHessian();}
+		public Matrix getHessian() {
+			Matrix result = isStrictlyPositive ? linkFunction.getHessian() : linkFunction.getHessian().scalarMultiply(2d);
+			return result;
+		}
 		
 		@Deprecated
 		@Override
@@ -192,12 +225,14 @@ public class CopulaLibrary {
 		
 		@Override
 		protected boolean setX(int indexFirstObservation, int indexSecondObservation) {
+//			int offset = isInterceptEnabled ? 1 : 0;
 			for (int dType = 0; dType < data.getDistancesBetweenObservations().size(); dType++) {
 				double dist = calculateDistance(dType, indexFirstObservation, indexSecondObservation);
 				if (Double.isInfinite(dist)) {
 					return false;
 				} else {
 					getOriginalFunction().setVariableValue(dType, dist);
+//					getOriginalFunction().setVariableValue(dType + offset, dist);
 				}
 			}
 			return true;
