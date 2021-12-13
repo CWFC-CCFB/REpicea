@@ -25,16 +25,16 @@ import repicea.math.Matrix;
 
 
 public interface HierarchicalSpatialDataStructure extends HierarchicalStatisticalDataStructure {
-	
+
 	/**
-	 * Return the distance map between the observations. <br>
+	 * Return the distance between two observations. <br>
 	 * <br>
-	 * The elements of the list correspond to distance types. The first key represents 
-	 * the observation index. The second key represent the distant observation index, 
-	 * whereas the value is the the distance to this distant observation.
-	 * @return a Map instance
+	 * @param t the distance type index 
+	 * @param ii the index of the first observation
+	 * @param jj the index of the second observation
+	 * @return the distance
 	 */
-	public List<Map<Integer, Map<Integer, Double>>> getDistancesBetweenObservations();
+	public double getDistancesBetweenObservations(int t, int ii, int jj);
 	
 //	/**
 //	 * This method returns the angle map between the observations. The keys represent the observation index, whereas the double 

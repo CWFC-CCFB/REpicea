@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import repicea.math.ParameterBound;
 import repicea.stats.data.DataSet;
+import repicea.stats.data.DistanceCalculator.EuclidianDistanceCalculator;
 import repicea.stats.data.DistanceCalculator.GeographicDistanceCalculator;
 import repicea.stats.data.StatisticalDataException;
 import repicea.stats.model.glm.GeneralizedLinearModel;
@@ -22,7 +23,7 @@ public class FGMCopulaGLModelTest {
 	 * This test implements a constant parameter copula model.
 	 * @throws Exception
 	 */
-//	@Ignore
+	@Ignore
 	@Test
     public void TestWithSimpleCopula() throws Exception {
 		double expectedCopulaValue = 0.18072406716297676;
@@ -52,7 +53,7 @@ public class FGMCopulaGLModelTest {
 	 * This test implements a constant parameter copula model.
 	 * @throws Exception
 	 */
-//	@Ignore
+	@Ignore
 	@Test
     public void TestWithDistanceCopula() throws Exception {
 		double expectedCopulaValue = -0.17036586673288104;
@@ -88,7 +89,7 @@ public class FGMCopulaGLModelTest {
 	
 	
 	// SIMPLE COPULA FOR NEWID_PE			
-//	@Ignore
+	@Ignore
 	@Test
     public void TestWithSimpleCopulaWithBeechData() throws Exception {
 		double expectedCopulaValue = 0.5103720998957171;
@@ -104,7 +105,7 @@ public class FGMCopulaGLModelTest {
 			copulaModel.setConvergenceCriterion(1E-8);
 			copulaModel.gridSearch(copulaModel.getParameters().m_iRows - 1, 0d, .9d, .1);
 			copulaModel.doEstimation();
-//			copulaModel.getSummary();
+			copulaModel.getSummary();
 			double actualCopulaValue = simpleCopula.getBeta().getValueAt(0, 0);
 			assertEquals(expectedCopulaValue, actualCopulaValue, 1E-8);
 			double actualLlk = copulaModel.getCompleteLogLikelihood().getValue();
@@ -118,7 +119,7 @@ public class FGMCopulaGLModelTest {
 
 
 	// DISTANCE COPULA (temporal) FOR NEWID_PE			
-//	@Ignore
+	@Ignore
 	@Test
     public void TestWithTemporalCorrelationOnBeechData() throws Exception {
 		double expectedCopulaValue = -0.04040906569629807;
@@ -139,9 +140,9 @@ public class FGMCopulaGLModelTest {
 			((DistanceLinkFunctionCopulaExpression) distanceCopula2).setBounds(0, new ParameterBound(null, 0d));
 			FGMCopulaGLModel copulaModel2 = new FGMCopulaGLModel(glm, distanceCopula2);
 			copulaModel2.setConvergenceCriterion(1E-8);
-			copulaModel2.gridSearch(copulaModel2.getParameters().m_iRows - 1, -.5d, -.1d, .05);
+			copulaModel2.gridSearch(copulaModel2.getParameters().m_iRows - 1, -.1d, -.01d, .01);
 			copulaModel2.doEstimation();
-//			copulaModel2.getSummary();
+			copulaModel2.getSummary();
 			double actual = distanceCopula2.getBeta().getValueAt(0, 0);
 			double actualLlk = copulaModel2.getCompleteLogLikelihood().getValue();
 			assertEquals(expectedCopulaValue, actual, 1E-8);
@@ -153,7 +154,7 @@ public class FGMCopulaGLModelTest {
 	}
 
 	
-	@Ignore
+//	@Ignore
 	@Test
     public void TestWithSimpleCopulaHEG() throws Exception {
 		String filename = ObjectUtility.getPackagePath(FGMCopulaGLModelTest.class).concat("copulaHEG.csv");
@@ -163,44 +164,28 @@ public class FGMCopulaGLModelTest {
 		glm.doEstimation();
 		glm.getSummary();
 		try {
-// SIMPLE COPULA FOR NEWID_PE			
-			CopulaExpression simpleCopula = new CopulaLibrary.SimpleCopulaExpression(0, "newID_PE");
-			FGMCopulaGLModel copulaModel = new FGMCopulaGLModel(glm, simpleCopula);
-			copulaModel.setConvergenceCriterion(1E-8);
-			copulaModel.gridSearch(copulaModel.getParameters().m_iRows - 1, 0d, .9d, .1);
-			copulaModel.doEstimation();
-			copulaModel.getSummary();
-
-// DISTANCE COPULA (temporal) FOR NEWID_PE			
-			CopulaExpression distanceCopula2 = new CopulaLibrary.DistanceLinkFunctionCopulaExpression(Type.Log, 
-					"newID_PE", 
-					"year.y", 
-					false, // no intercept
-					true, // strictly positive
-					null, 
-					-.15);		
-			((DistanceLinkFunctionCopulaExpression) distanceCopula2).setBounds(0, new ParameterBound(null, 0d));
-			FGMCopulaGLModel copulaModel2 = new FGMCopulaGLModel(glm, distanceCopula2);
-			copulaModel2.setConvergenceCriterion(1E-8);
-			copulaModel2.gridSearch(copulaModel.getParameters().m_iRows - 1, -.5d, -.1d, .05);
-			copulaModel2.doEstimation();
-			copulaModel2.getSummary();
 
 //// DISTANCE COPULA (spatial)
-//			CopulaExpression distanceCopula = new CopulaLibrary.DistanceLinkFunctionCopulaExpression(Type.Log, 
-//					"whole", 
-//					"longitudeDeg + latitudeDeg", 
-//					false,
-//					null, 
-//					Arrays.asList(new GeographicDistanceCalculator()), -.6);		// no intercept in the linear expression
-//			((DistanceLinkFunctionCopulaExpression) distanceCopula).setBounds(0, new ParameterBound(null, 0d));
-////			((DistanceLinkFunctionCopulaExpression) distanceCopula).setBounds(1, new ParameterBound(null, 0d));
-//			FGMCopulaGLModel copulaModel = new FGMCopulaGLModel(glm, distanceCopula);
-//			copulaModel.getEstimator().setVerboseEnabled(true);;
-//			copulaModel.setConvergenceCriterion(1E-8);
-////			copulaModel.gridSearch(copulaModel.getParameters().m_iRows - 1, -.4d, -.1d, .1);
-//			copulaModel.doEstimation();
-//			copulaModel.getSummary();
+			CopulaExpression distanceCopula = new CopulaLibrary.DistanceLinkFunctionCopulaExpression(Type.Log, 
+					"whole", 
+//					"longitudeDeg + latitudeDeg, year.y", 
+					"longitudeDeg + latitudeDeg", 
+					false, // false : no intercept
+					false, // true : strictly positive
+//					Arrays.asList(1d, 100d), 
+//					Arrays.asList(new GeographicDistanceCalculator(), new EuclidianDistanceCalculator()), 
+//					-0.4, -.0404);		
+					null, 
+					Arrays.asList(new GeographicDistanceCalculator()), 
+					-0.58);		
+			((DistanceLinkFunctionCopulaExpression) distanceCopula).setBounds(0, new ParameterBound(null, 0d));
+//			((DistanceLinkFunctionCopulaExpression) distanceCopula).setBounds(1, new ParameterBound(null, 0d));
+			FGMCopulaGLModel copulaModel = new FGMCopulaGLModel(glm, distanceCopula);
+			copulaModel.getEstimator().setVerboseEnabled(true);;
+			copulaModel.setConvergenceCriterion(1E-8);
+//			copulaModel.gridSearch(copulaModel.getParameters().m_iRows - 1, -.5, -.1, .1);
+			copulaModel.doEstimation();
+			copulaModel.getSummary();
 
 //// DISTANCE COPULA (temporal + spatial)
 //			CopulaExpression distanceCopula = new CopulaLibrary.DistanceLinkFunctionCopulaExpression(Type.Log, "whole", "longitudeDeg + latitudeDeg, year.y", Arrays.asList(new Double[]{1d, 100d}), -.05, -.04);		// no intercept in the linear expression

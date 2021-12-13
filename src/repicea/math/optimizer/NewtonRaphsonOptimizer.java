@@ -33,7 +33,7 @@ public class NewtonRaphsonOptimizer extends AbstractOptimizer {
 	public final static String InnerIterationStarted = "InnerIterationStarted";
 //	public final static String OuterIterationStarted = "OuterIterationStarted";
 	
-	protected boolean verbose = false;
+//	protected boolean verbose = false;
 	protected int maxNumberOfIterations = 20;
 	protected double gradientCriterion = 1E-3;
 	private int iterationID;
@@ -77,7 +77,7 @@ public class NewtonRaphsonOptimizer extends AbstractOptimizer {
 			setParameters(function, indicesOfParametersToOptimize, newBeta);
 			currentLlkValue = function.getValue();
 			if (isVerboseEnabled()) {
-				System.out.println("    Subiteration : " + numberSubIter + "; Log-likelihood : " + currentLlkValue);
+				System.out.println("    Subiteration: " + numberSubIter + "; Log-likelihood: " + currentLlkValue + "; Parameter estimates: " + newBeta.toString());
 			}
 			numberSubIter++;
 		} while ((Double.isNaN(currentLlkValue) || currentLlkValue < previousLogLikelihood) && numberSubIter < maxNumberOfSubiterations); // loop if the number of iterations is not over the maximum number and either the likelihood is still higher or non defined
@@ -117,7 +117,9 @@ public class NewtonRaphsonOptimizer extends AbstractOptimizer {
 				Matrix optimisationStep = hessian.getInverseMatrix().multiply(gradient).scalarMultiply(-1d);
 				
 				Matrix originalBeta = extractParameters(function,indicesOfParametersToOptimize);
-
+				if (this.isVerboseEnabled()) {
+					System.out.println("Initial Llk: " + value0 + "; parms: " + originalBeta.toString());
+				}
 				value0 = runInnerOptimisation(function, 
 						indicesOfParametersToOptimize, 
 						originalBeta, 
@@ -136,7 +138,7 @@ public class NewtonRaphsonOptimizer extends AbstractOptimizer {
 				} else if (gconv < convergenceCriterion) {
 					convergenceAchieved = true;
 				}
-				if (verbose) {
+				if (isVerboseEnabled()) {
 					System.out.println("Iteration : " + iterationID + "; Log-likelihood : " + value0 + "; df : " + gconv + "; parms : " + currentBeta.toString());
 				}
 			}  
@@ -208,11 +210,5 @@ public class NewtonRaphsonOptimizer extends AbstractOptimizer {
 		}
 	}
 
-	/**
-	 * This method enables the verbose, i.e. some messages will be displayed in the console. 
-	 * The default verbose value is false.
-	 * @param verbose a boolean
-	 */
-	public void setVerbose(boolean verbose) {this.verbose = verbose;}
 	
 }

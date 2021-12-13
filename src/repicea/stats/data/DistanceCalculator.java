@@ -91,7 +91,7 @@ public abstract class DistanceCalculator {
 		 * @param dataSet the DataSet instance that contains the data
 		 * @param indexA the index of the first observation
 		 * @param indexB the index of the second observation
-		 * @return the distance (km)
+		 * @return the distance (in 100 km)
 		 */
 		@Override
 		public double calculateDistance(List<String> fields, DataSet dataSet, int indexA, int indexB) {

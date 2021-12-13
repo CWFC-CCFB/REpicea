@@ -137,6 +137,7 @@ public class CopulaLibrary {
 		private final DistanceCalculator[] distCalculators;
 		private final boolean isInterceptEnabled;
 		private final boolean isStrictlyPositive;
+		private final int nbDistanceTypes;
 		
 		/**
 		 * Constructor for a distance-dependent copula. <br>
@@ -166,7 +167,7 @@ public class CopulaLibrary {
 				distCalculators = null;
 			}
 			this.distanceFieldsEnumeration = distanceFieldsEnumeration;
-			int nbDistanceTypes = distanceFieldsEnumeration.split(",").length;
+			nbDistanceTypes = distanceFieldsEnumeration.split(",").length;
 			int nbParametersRequired = this.isInterceptEnabled ? nbDistanceTypes + 1 : nbDistanceTypes;
 			if (nbParametersRequired != parameterStartingValues.length) {
 				throw new InvalidParameterException("The number of parameters is inconsistent: expected " + nbParametersRequired + " but there is " + parameterStartingValues.length + " !"); 
@@ -225,29 +226,29 @@ public class CopulaLibrary {
 		
 		@Override
 		protected boolean setX(int indexFirstObservation, int indexSecondObservation) {
-//			int offset = isInterceptEnabled ? 1 : 0;
-			for (int dType = 0; dType < data.getDistancesBetweenObservations().size(); dType++) {
-				double dist = calculateDistance(dType, indexFirstObservation, indexSecondObservation);
-				if (Double.isInfinite(dist)) {
+			int offset = isInterceptEnabled ? 1 : 0;
+//			for (int dType = 0; dType < data.getDistancesBetweenObservations().size(); dType++) {
+			for (int dType = 0; dType < this.nbDistanceTypes; dType++) {
+				double dist = this.data.getDistancesBetweenObservations(dType, indexFirstObservation, indexSecondObservation);
+				if (Double.isInfinite(dist)) {		// FIXME this might be obsolete
 					return false;
 				} else {
-					getOriginalFunction().setVariableValue(dType, dist);
-//					getOriginalFunction().setVariableValue(dType + offset, dist);
+					getOriginalFunction().setVariableValue(dType + offset, dist);
 				}
 			}
 			return true;
 		}
 		
-		private double calculateDistance(int distanceType, int indexFirstObservation, int indexSecondObservation) {
-			Map<Integer, Double> oMap = data.getDistancesBetweenObservations().get(distanceType).get(indexFirstObservation);
-			if (oMap != null) {
-				Double distance = oMap.get(indexSecondObservation);
-				if (distance != null) {
-					return distance;
-				}
-			}
-			return Double.POSITIVE_INFINITY;
-		}
+//		private double calculateDistance(int distanceType, int indexFirstObservation, int indexSecondObservation) {
+//			Map<Integer, Double> oMap = data.getDistancesBetweenObservations().get(distanceType).get(indexFirstObservation);
+//			if (oMap != null) {
+//				Double distance = oMap.get(indexSecondObservation);
+//				if (distance != null) {
+//					return distance;
+//				}
+//			}
+//			return Double.POSITIVE_INFINITY;
+//		}
 		
 		@Override
 		public int getNumberOfVariables() {return getOriginalFunction().getNumberOfVariables();}
@@ -262,9 +263,9 @@ public class CopulaLibrary {
 			super.initialize(model, data);
 			List<List<String>> distanceParameterization = new ArrayList<List<String>>();
 			List<String> distanceTypes = ObjectUtility.decomposeUsingToken(distanceFieldsEnumeration, ",");
-			if (distanceTypes.size() != this.getBeta().m_iRows) {
-				throw new InvalidParameterException("Expected " + getBeta().m_iRows + " distance types instead of the " + distanceTypes.size() + " specified!");
-			}
+//			if (distanceTypes.size() != this.getBeta().m_iRows) {
+//				throw new InvalidParameterException("Expected " + getBeta().m_iRows + " distance types instead of the " + distanceTypes.size() + " specified!");
+//			}
 			for (String type : distanceTypes) {
 				distanceParameterization.add(ObjectUtility.decomposeUsingToken(type, "+"));
 			}
@@ -279,7 +280,7 @@ public class CopulaLibrary {
 				if (!distanceLimits.isEmpty()) {
 					this.data.setDistanceLimits(distanceLimits);
 				}
-				this.data.getDistancesBetweenObservations();
+//				this.data.getDistancesBetweenObservations(); should not have to run this it will be run on the fly later on
 			}
 		}
 	}

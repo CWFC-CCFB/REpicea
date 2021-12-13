@@ -137,7 +137,7 @@ class SpearmanCorrelationCoefficient {
  						indexB = observationIndex.get(j);
  						unitB = spearmanRankingUnits.get(indexB);
  						if (distanceAvailable) {
- 							double distance = ((HierarchicalSpatialDataStructure) data).getDistancesBetweenObservations().get(0).get(indexA).get(indexB);		// FIXME the 0 must be set to something else here MF2021-12-08
+ 							double distance = ((HierarchicalSpatialDataStructure) data).getDistancesBetweenObservations(0, indexA, indexB);		// FIXME the 0 must be set to something else here MF2021-12-08
  							int roundedDistance = (int) Math.round(distance);
  							if (roundedDistance < units.length) {
  								if (!units[roundedDistance].contains(unitA)) {

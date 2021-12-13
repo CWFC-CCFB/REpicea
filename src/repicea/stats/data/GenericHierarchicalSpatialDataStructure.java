@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import repicea.math.Matrix;
+
 /**
  * This class is the basic class for a hierarchical and spatial data structure.
  * @author Mathieu Fortin - October 2011
@@ -36,6 +38,7 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 	protected boolean distanceCalculated;
 	protected final List<Double> distanceLimits;
 	protected final Map<Integer, DistanceCalculator> distCalcMap;
+	protected List<Matrix> distanceMatrixList;
 //	protected Map<Integer, Map<Integer, Matrix>> angleMap;
 //	protected boolean angleCalculated;
 		
@@ -59,11 +62,13 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 	}
 
 	@Override
-	public List<Map<Integer, Map<Integer, Double>>> getDistancesBetweenObservations() {
-		if (distanceCalculated) {
-			return distanceMapList;
- 		} else {
- 			if (isThereAnyHierarchicalStructure() && !distanceFields.isEmpty()) {
+	public double getDistancesBetweenObservations(int type, int ii, int jj) {
+		if (!distanceCalculated) {
+			if (distanceFields.isEmpty()) {
+				throw new InvalidParameterException("There is no available field to calculate the distances!");
+			}
+ 			System.out.println("Calculating distances between the observations...");
+ 			if (isThereAnyHierarchicalStructure()) {	// then we should use the maps in distanceMapList 
  				distanceMapList.clear();
  				int nbDistanceTypes = distanceFields.size();
  				for (int i = 0; i < nbDistanceTypes; i++) {
@@ -79,40 +84,36 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
  						int indexB;
  						for (int i = 0; i < nbObs; i++) {
  							indexA = observationIndex.get(i);
- 							outer:
- 								for (int j = i + 1; j < nbObs; j++) {
- 									indexB = observationIndex.get(j);
- 									for (int dType = 0; dType < nbDistanceTypes; dType++) {
- 										if (!distanceMapList.get(dType).containsKey(indexA)) {
- 											distanceMapList.get(dType).put(indexA, new HashMap<Integer,Double>());
- 										}
-// 										tmpMap = new TreeMap<Integer, Double>();
- 										double distance = getDistanceBetweenObservations(dType, indexA, indexB);
- 										if (distance > getLimit(dType)) {
- 											break outer;
- 										}
-// 										tmpMap.put(indexB, distance);
- 										distanceMapList.get(dType).get(indexA).put(indexB, distance);
+ 							for (int j = i + 1; j < nbObs; j++) {
+ 								indexB = observationIndex.get(j);
+ 								for (int dType = 0; dType < nbDistanceTypes; dType++) {
+ 									double distance = calculateDistanceBetweenObservations(dType, indexA, indexB);
+ 									if (!distanceMapList.get(dType).containsKey(indexA)) {
+ 										distanceMapList.get(dType).put(indexA, new HashMap<Integer,Double>());
  									}
+ 									distanceMapList.get(dType).get(indexA).put(indexB, distance);
  								}
+ 							}
  						}
  					}
  				}
- 				distanceCalculated = true;
- 				return distanceMapList;
  			} else {
- 				return null;
+ 				// TODO calculate the distance in the matrices
  			}
- 		}
+ 			distanceCalculated = true;
+			System.out.println("Distances have been calculated.");
+		}				
+ 		
+		return distanceMatrixList != null ? distanceMatrixList.get(type).getValueAt(ii, jj) : distanceMapList.get(type).get(ii).get(jj);
 	}
 
-	private double getLimit(int dType) {
-		if (!distanceLimits.isEmpty()) {
-			return distanceLimits.get(dType);
-		} else {
-			return Double.POSITIVE_INFINITY;
-		}
-	}
+//	private double getLimit(int dType) {
+//		if (!distanceLimits.isEmpty()) {
+//			return distanceLimits.get(dType);
+//		} else {
+//			return Double.POSITIVE_INFINITY;
+//		}
+//	}
 	
 //	@Override
 //	public Map<Integer, Map<Integer, Matrix>> getAngleBetweenObservations() {
@@ -189,7 +190,7 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 	 * @param indexB the index of the second observation
 	 * @return a double the Euclidian distance
 	 */
-	protected double getDistanceBetweenObservations(int type, int indexA, int indexB) {
+	protected double calculateDistanceBetweenObservations(int type, int indexA, int indexB) {
 		if (type >= distanceFields.size()) {
 			throw new InvalidParameterException("There are not enough distance types to compute the " + type + "th distance type!");
 		}
