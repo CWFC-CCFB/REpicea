@@ -20,12 +20,14 @@ package repicea.stats.data;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.logging.Level;
 
-import repicea.math.Matrix;
+import repicea.stats.model.AbstractStatisticalModel;
+import repicea.util.REpiceaLogManager;
 
 /**
  * This class is the basic class for a hierarchical and spatial data structure.
@@ -33,31 +35,77 @@ import repicea.math.Matrix;
  */
 public class GenericHierarchicalSpatialDataStructure extends GenericHierarchicalStatisticalDataStructure implements HierarchicalSpatialDataStructure {
 
-	protected final List<Map<Integer, Map<Integer, Double>>> distanceMapList;
+	static class DistanceRecorderManager {
+		final Map<Integer, DistanceRecorder> distanceRecorderMap;
+		DistanceRecorderManager() {
+			distanceRecorderMap = new HashMap<Integer, DistanceRecorder>();
+		}
+		
+		void addIndices(List<Integer> indices) {
+			DistanceRecorder dr = new DistanceRecorder(indices);
+			for (Integer i : indices) {
+				distanceRecorderMap.put(i, dr);
+			}
+		}
+	}
+	
+	static class DistanceRecorder {
+		final List<Integer> index;
+		final int nbObs;
+		final int offset;
+		final double[] distances;
+		
+		DistanceRecorder(List<Integer> index) {
+			this.index = new ArrayList<Integer>();
+			this.index.addAll(index);
+			Collections.sort(this.index);
+			offset = this.index.get(0);
+			nbObs = index.size();
+			int arraySize = ((nbObs - 1) * nbObs) / 2;
+			distances = new double[arraySize];
+		}
+		
+		void setValueAt(int indexA, int indexB, double value) {
+			int index = getIndex(indexA, indexB);
+			distances[index] = value;
+		}
+		
+		double getValueAt(int indexA, int indexB) {
+			int index = getIndex(indexA, indexB);
+			return distances[index];
+		}
+		
+		private int getIndex(int indexA, int indexB) {
+			int i = indexA - offset;
+			int j = indexB - offset;
+			if (j > i) {
+				int rowOffset = i * (nbObs - 1) - (int) (((i - 1) * i) * .5);
+				return rowOffset + (j - i - 1);
+			} else {
+				throw new InvalidParameterException("Index A must refer to an index smaller than that of index B!");
+			}
+		}
+	}
+	
+	
+	protected final List<DistanceRecorderManager> distanceRecorderManagers;
 	protected List<List<String>> distanceFields;
 	protected boolean distanceCalculated;
-	protected final List<Double> distanceLimits;
 	protected final Map<Integer, DistanceCalculator> distCalcMap;
-	protected List<Matrix> distanceMatrixList;
-//	protected Map<Integer, Map<Integer, Matrix>> angleMap;
-//	protected boolean angleCalculated;
 		
 	/**
 	 * General constructor. To be implemented in derived class.
 	 * @param dataSet a DataSet instance
 	 */
 	public GenericHierarchicalSpatialDataStructure(DataSet dataSet) {
-		super(dataSet);
-		distanceMapList = new ArrayList<Map<Integer, Map<Integer, Double>>>();
-//		angleMap = new HashMap<Integer, Map<Integer, Matrix>>();
+		super(dataSet);		// the data set is sorted according to the structure
+		distanceRecorderManagers = new ArrayList<DistanceRecorderManager>();
 		distanceFields = new ArrayList<List<String>>();
-		distanceLimits = new ArrayList<Double>();
 		distCalcMap = new HashMap<Integer, DistanceCalculator>();
 }
 
 	@Override
 	public void setDistanceFields(List<List<String>> fields) {
-		distanceLimits.clear();
 		distanceFields = fields;
 	}
 
@@ -69,121 +117,49 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 			}
  			System.out.println("Calculating distances between the observations...");
  			if (isThereAnyHierarchicalStructure()) {	// then we should use the maps in distanceMapList 
- 				distanceMapList.clear();
+ 				distanceRecorderManagers.clear();
  				int nbDistanceTypes = distanceFields.size();
  				for (int i = 0; i < nbDistanceTypes; i++) {
- 					distanceMapList.add(new HashMap<Integer, Map<Integer,Double>>());
+ 					distanceRecorderManagers.add(new DistanceRecorderManager());
  				}
  				Map<String, DataBlock> hierarchicalStructure = getHierarchicalStructure();
  				for (String levelID : hierarchicalStructure.keySet()) {
  					List<Integer> observationIndex = hierarchicalStructure.get(levelID).getIndices();
  					if (observationIndex != null && !observationIndex.isEmpty()) {
- 						int nbObs = observationIndex.size();
- 						TreeMap<Integer, Double> tmpMap;
- 						int indexA;
- 						int indexB;
+						for (int dType = 0; dType < nbDistanceTypes; dType++) {
+							distanceRecorderManagers.get(dType).addIndices(observationIndex);
+						}
+						int nbObs = observationIndex.size();
+ 						int indexA, indexB;
  						for (int i = 0; i < nbObs; i++) {
  							indexA = observationIndex.get(i);
+ 	 						if (indexA%1000 == 0) {
+ 	 							REpiceaLogManager.logMessage(AbstractStatisticalModel.LoggerName,
+ 	 									Level.FINE, 
+ 	 									null,
+ 	 									"Processing observation " + indexA);
+ 	 						}
  							for (int j = i + 1; j < nbObs; j++) {
  								indexB = observationIndex.get(j);
  								for (int dType = 0; dType < nbDistanceTypes; dType++) {
  									double distance = calculateDistanceBetweenObservations(dType, indexA, indexB);
- 									if (!distanceMapList.get(dType).containsKey(indexA)) {
- 										distanceMapList.get(dType).put(indexA, new HashMap<Integer,Double>());
- 									}
- 									distanceMapList.get(dType).get(indexA).put(indexB, distance);
+ 									distanceRecorderManagers.get(dType).distanceRecorderMap.get(indexA).setValueAt(indexA, indexB, distance);
  								}
  							}
  						}
  					}
  				}
  			} else {
- 				// TODO calculate the distance in the matrices
+ 				throw new InvalidParameterException("There is no hierarchical structure in the data!");
  			}
  			distanceCalculated = true;
 			System.out.println("Distances have been calculated.");
 		}				
  		
-		return distanceMatrixList != null ? distanceMatrixList.get(type).getValueAt(ii, jj) : distanceMapList.get(type).get(ii).get(jj);
+		return distanceRecorderManagers.get(type).distanceRecorderMap.get(ii).getValueAt(ii, jj);
 	}
 
-//	private double getLimit(int dType) {
-//		if (!distanceLimits.isEmpty()) {
-//			return distanceLimits.get(dType);
-//		} else {
-//			return Double.POSITIVE_INFINITY;
-//		}
-//	}
 	
-//	@Override
-//	public Map<Integer, Map<Integer, Matrix>> getAngleBetweenObservations() {
-//		if (angleCalculated) {
-//			return angleMap;
-// 		} else {
-// 			if (isThereAnyHierarchicalStructure() && !distanceFields.isEmpty()) {
-// 				angleMap.clear();
-// 				Map<String, DataBlock> hierarchicalStructure = getHierarchicalStructure();
-// 				for (String levelID : hierarchicalStructure.keySet()) {
-// 					List<Integer> observationIndex = hierarchicalStructure.get(levelID).getIndices();
-// 					if (observationIndex != null && !observationIndex.isEmpty()) {
-// 						int nbObs = observationIndex.size();
-// 						TreeMap<Integer, Matrix> tmpMap;
-// 						int indexA;
-// 						int indexB;
-// 						for (int i = 0; i < nbObs; i++) {
-// 							indexA = observationIndex.get(i);
-// 							tmpMap = new TreeMap<Integer, Matrix>();
-// 							angleMap.put(indexA, tmpMap);
-// 							for (int j = 0; j < nbObs; j++) {
-// 								indexB = observationIndex.get(j);
-// 								Matrix angles = getAnglesBetweenObservations(indexA, indexB);
-// 								tmpMap.put(indexB, angles);
-// 							}
-// 						}
-// 					}
-// 				}
-// 				angleCalculated = true;
-// 				return angleMap;
-// 			} else {
-// 				return null;
-// 			}
-// 		}
-//	}
-
-	
-	
-	
-//	protected Matrix getAnglesBetweenObservations(int indexA, int indexB) {
-//		int nbDimensions = distanceFields.size();
-//		String fieldName;
-//		double diff;
-//		Object valueA;
-//		Object valueB;
-//
-//		List<Double> listDiff = new ArrayList<Double>();
-//		
-//		for (int i = 0; i < nbDimensions; i++) {
-//			fieldName = distanceFields.get(i);
-//			int indexOfThisField = dataSet.getIndexOfThisField(fieldName);
-//			valueA = dataSet.getValueAt(indexA, indexOfThisField);
-//			valueB = dataSet.getValueAt(indexB, indexOfThisField);
-//			diff = (Double) valueA - (Double) valueB;
-//			listDiff.add(Math.abs(diff));
-//		}
-//
-//		double angleRadians;
-//		Matrix outputMatrix = new Matrix(nbDimensions,nbDimensions);
-//		for (int i = 0; i < nbDimensions - 1; i++) {
-//			for (int j = i + 1; j < nbDimensions; j++) {
-//				angleRadians = Math.atan(listDiff.get(j) / listDiff.get(i));
-//				outputMatrix.setValueAt(i, j, angleRadians);
-//				outputMatrix.setValueAt(j, i, angleRadians);
-//			}
-//		}
-//		
-//		return outputMatrix;
-//	}
-
 	/**
 	 * This method computes the Euclidian distance between two observations regardless of the dimensions. 
 	 * @param indexA the index of the first observation
@@ -196,35 +172,8 @@ public class GenericHierarchicalSpatialDataStructure extends GenericHierarchical
 		}
 		List<String> distanceTypeFields = distanceFields.get(type);
 		return getDistanceCalculator(type).calculateDistance(distanceTypeFields, dataSet, indexA, indexB);
-//		
-//		
-//		int nbDimensions = distanceType.size();
-//		double ssDifferences = 0;
-//		String fieldName;
-//		double diff;
-//		Object valueA;
-//		Object valueB;
-//		
-//		for (int i = 0; i < nbDimensions; i++) {
-//			fieldName = distanceType.get(i);
-//			int indexOfThisField = dataSet.getIndexOfThisField(fieldName);
-//			valueA = dataSet.getValueAt(indexA, indexOfThisField);
-//			valueB = dataSet.getValueAt(indexB, indexOfThisField);
-//			diff = ((Number) valueA).doubleValue() - ((Number) valueB).doubleValue();
-//			ssDifferences += diff * diff;
-//		}
-//		
-//		return Math.sqrt(ssDifferences);
 	}
 
-	@Override
-	public void setDistanceLimits(List<Double> limits) {
-		if (distanceFields.size() != limits.size()) {
-			throw new InvalidParameterException("The number of limits in the limits argument is inconsistent: expected " + distanceFields.size() + " instead of " + limits.size());
-		}
-		this.distanceLimits.clear();
-		this.distanceLimits.addAll(limits);
-	}
 
 	@Override
 	public void setDistanceCalculators(DistanceCalculator... distanceCalculators) {	// could use a different calculator depending on the distance type

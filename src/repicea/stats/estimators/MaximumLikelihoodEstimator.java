@@ -90,12 +90,4 @@ public class MaximumLikelihoodEstimator implements Estimator {
 	@Override
 	public String toString() {return "Maximum likelihood estimator";}
 
-
-	@Override
-	public void setVerboseEnabled(boolean bool) {
-		nro.setVerboseEnabled(bool);
-	}
-	
-	
-
 }

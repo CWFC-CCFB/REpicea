@@ -38,6 +38,8 @@ import repicea.stats.estimators.MaximumLikelihoodEstimator;
  */
 public abstract class AbstractStatisticalModel<D extends StatisticalDataStructure> implements StatisticalModel<D> {
 
+	public static String LoggerName = AbstractStatisticalModel.class.getName();
+
 	private Estimator estimator;
 	private D dataStructure;
 	

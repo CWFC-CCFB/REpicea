@@ -18,13 +18,17 @@
  */
 package repicea.stats.estimators;
 
+import java.util.logging.Level;
+
 import repicea.math.Matrix;
 import repicea.stats.data.StatisticalDataStructure;
 import repicea.stats.estimates.Estimate;
 import repicea.stats.estimates.GaussianEstimate;
 import repicea.stats.estimates.VarianceEstimate;
+import repicea.stats.model.AbstractStatisticalModel;
 import repicea.stats.model.StatisticalModel;
 import repicea.stats.model.lm.LinearModel;
+import repicea.util.REpiceaLogManager;
 
 /**
  * The OLSOptimizer implements the Ordinary Least Squares estimator.
@@ -35,7 +39,6 @@ public class OLSEstimator implements Estimator {
 	private VarianceEstimate residualVariance;
 	private boolean hasConverged;
 	private Estimate<?> betaVector;
-	private boolean verbose;
 	
 	@Override
 	public boolean doEstimation(StatisticalModel<? extends StatisticalDataStructure> model)	throws EstimatorException {
@@ -52,9 +55,10 @@ public class OLSEstimator implements Estimator {
 		Matrix residual = model.getResiduals();
 		int degreesOfFreedom = model.getDataStructure().getNumberOfObservations() - betaVector.getMean().m_iRows;
 		double sse = residual.transpose().multiply(residual).getValueAt(0, 0);
-		if (verbose) {
-			System.out.println("Sum of squared errors = " + sse);
-		}
+		REpiceaLogManager.logMessage(AbstractStatisticalModel.LoggerName,
+				Level.FINE,
+				null, 
+				"Sum of squared errors = " + sse);
 		double resVar = sse / degreesOfFreedom;
 		residualVariance = new VarianceEstimate(degreesOfFreedom, resVar);
 		((GaussianEstimate) betaVector).setVariance(inverseProduct.scalarMultiply(resVar));
@@ -73,12 +77,7 @@ public class OLSEstimator implements Estimator {
 	public boolean isConvergenceAchieved() {return hasConverged;}
 
 	@Override
-	public Estimate<?> getParameterEstimates() {
-		return betaVector;
-	}
+	public Estimate<?> getParameterEstimates() {return betaVector;}
 
-	@Override
-	public void setVerboseEnabled(boolean bool) {verbose = bool;}
-	
-	
+
 }

@@ -19,9 +19,12 @@
 package repicea.math.optimizer;
 
 import java.util.List;
+import java.util.logging.Level;
 
 import repicea.math.AbstractMathematicalFunction;
 import repicea.math.Matrix;
+import repicea.stats.model.AbstractStatisticalModel;
+import repicea.util.REpiceaLogManager;
 
 /**
  * The NewtonRaphsonOptimizer class implements the Optimizer interface. It optimizes a log-likelihood function using the
@@ -31,9 +34,6 @@ import repicea.math.Matrix;
 public class NewtonRaphsonOptimizer extends AbstractOptimizer {
 
 	public final static String InnerIterationStarted = "InnerIterationStarted";
-//	public final static String OuterIterationStarted = "OuterIterationStarted";
-	
-//	protected boolean verbose = false;
 	protected int maxNumberOfIterations = 20;
 	protected double gradientCriterion = 1E-3;
 	private int iterationID;
@@ -76,9 +76,10 @@ public class NewtonRaphsonOptimizer extends AbstractOptimizer {
 			Matrix newBeta = originalBeta.add(optimisationStep.scalarMultiply(scalingFactor - numberSubIter * .1));
 			setParameters(function, indicesOfParametersToOptimize, newBeta);
 			currentLlkValue = function.getValue();
-			if (isVerboseEnabled()) {
-				System.out.println("    Subiteration: " + numberSubIter + "; Log-likelihood: " + currentLlkValue + "; Parameter estimates: " + newBeta.toString());
-			}
+			REpiceaLogManager.logMessage(AbstractStatisticalModel.LoggerName,
+					Level.FINER, 
+					null, 
+					"Subiteration: " + numberSubIter + "; Log-likelihood: " + currentLlkValue + "; Parameter estimates: " + newBeta.toString());
 			numberSubIter++;
 		} while ((Double.isNaN(currentLlkValue) || currentLlkValue < previousLogLikelihood) && numberSubIter < maxNumberOfSubiterations); // loop if the number of iterations is not over the maximum number and either the likelihood is still higher or non defined
 		
@@ -117,9 +118,10 @@ public class NewtonRaphsonOptimizer extends AbstractOptimizer {
 				Matrix optimisationStep = hessian.getInverseMatrix().multiply(gradient).scalarMultiply(-1d);
 				
 				Matrix originalBeta = extractParameters(function,indicesOfParametersToOptimize);
-				if (this.isVerboseEnabled()) {
-					System.out.println("Initial Llk: " + value0 + "; parms: " + originalBeta.toString());
-				}
+				REpiceaLogManager.logMessage(AbstractStatisticalModel.LoggerName,
+						Level.FINE, 
+						null, 
+						"Initial Llk: " + value0 + "; parms: " + originalBeta.toString());
 				value0 = runInnerOptimisation(function, 
 						indicesOfParametersToOptimize, 
 						originalBeta, 
@@ -138,9 +140,10 @@ public class NewtonRaphsonOptimizer extends AbstractOptimizer {
 				} else if (gconv < convergenceCriterion) {
 					convergenceAchieved = true;
 				}
-				if (isVerboseEnabled()) {
-					System.out.println("Iteration : " + iterationID + "; Log-likelihood : " + value0 + "; df : " + gconv + "; parms : " + currentBeta.toString());
-				}
+				REpiceaLogManager.logMessage(AbstractStatisticalModel.LoggerName,
+						Level.FINE,
+						null,
+						"Iteration : " + iterationID + "; Log-likelihood : " + value0 + "; df : " + gconv + "; parms : " + currentBeta.toString());
 			}  
 
 			if (iterationID > maxNumberOfIterations && !convergenceAchieved) {

@@ -1,5 +1,5 @@
 /*
- * This file is part of the repicea-statistics library.
+ * This file is part of the repicea library.
  *
  * Copyright (C) 2009-2012 Mathieu Fortin for Rouge-Epicea
  *
@@ -65,13 +65,13 @@ public abstract class AbstractOptimizer {
 	protected Matrix betaVector;
 	protected Matrix hessianMatrix;
 
-	private boolean verboseEnabled;
+//	private boolean verboseEnabled;
 	
 	/**
 	 * Default constructor.
 	 */
 	public AbstractOptimizer() {
-		verboseEnabled = false;
+//		verboseEnabled = false;
 		listeners = new CopyOnWriteArrayList<OptimizerListener>();
 	}
 	
@@ -91,25 +91,6 @@ public abstract class AbstractOptimizer {
 
 	public Matrix getHessianAtMaximum() {return hessianMatrix;}
 
-//	public Matrix getCorrelationMatrix() {
-//		Matrix std;
-//		try {
-//			Matrix omegaMatrix = betaVector.getVariance();
-//			std = omegaMatrix.diagonalVector().matrixDiagonal().getLowerCholTriangle().diagonalVector();
-//			Matrix correlationMatrix = omegaMatrix.elementWiseDivide(std.multiply(std.transpose()));
-//			return correlationMatrix;
-//		} catch (Exception e) {
-//			return null;
-//		}
-//	}
-
-	/**
-	 * This method sets the verbose to true or false.
-	 * @param verboseEnabled true to get the information about the subiteration or false (DEFAULT VALUE).
-	 */
-	public void setVerboseEnabled(boolean verboseEnabled) {this.verboseEnabled = verboseEnabled;}
-
-	protected boolean isVerboseEnabled() {return verboseEnabled;}
 	
 	@Override
 	public String toString() {

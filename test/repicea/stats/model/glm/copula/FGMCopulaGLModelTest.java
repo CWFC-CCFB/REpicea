@@ -1,21 +1,43 @@
+/*
+ * This file is part of the repicea library.
+ *
+ * Copyright (C) 2009-2021 Mathieu Fortin for Rouge-Epicea
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This library is distributed with the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License for more details.
+ *
+ * Please see the license at http://www.gnu.org/copyleft/lesser.html.
+ */
 package repicea.stats.model.glm.copula;
 
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.SimpleFormatter;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
 import repicea.math.ParameterBound;
 import repicea.stats.data.DataSet;
-import repicea.stats.data.DistanceCalculator.EuclidianDistanceCalculator;
 import repicea.stats.data.DistanceCalculator.GeographicDistanceCalculator;
 import repicea.stats.data.StatisticalDataException;
+import repicea.stats.model.AbstractStatisticalModel;
 import repicea.stats.model.glm.GeneralizedLinearModel;
 import repicea.stats.model.glm.LinkFunction.Type;
 import repicea.stats.model.glm.copula.CopulaLibrary.DistanceLinkFunctionCopulaExpression;
 import repicea.util.ObjectUtility;
+import repicea.util.REpiceaLogManager;
 
 public class FGMCopulaGLModelTest {
 
@@ -157,6 +179,12 @@ public class FGMCopulaGLModelTest {
 //	@Ignore
 	@Test
     public void TestWithSimpleCopulaHEG() throws Exception {
+		REpiceaLogManager.getLogger(AbstractStatisticalModel.LoggerName).setLevel(Level.FINE);
+		ConsoleHandler sh = new ConsoleHandler();
+		sh.setLevel(Level.FINE);
+		sh.setFormatter(new SimpleFormatter());
+		REpiceaLogManager.getLogger(AbstractStatisticalModel.LoggerName).addHandler(sh);
+
 		String filename = ObjectUtility.getPackagePath(FGMCopulaGLModelTest.class).concat("copulaHEG.csv");
 //		String filename = ObjectUtility.getPackagePath(FGMCopulaGLModelTest.class).concat("copulaHEGOneMesPerPlot.csv");
 		DataSet dataSet = new DataSet(filename, true);
@@ -171,7 +199,7 @@ public class FGMCopulaGLModelTest {
 //					"longitudeDeg + latitudeDeg, year.y", 
 					"longitudeDeg + latitudeDeg", 
 					false, // false : no intercept
-					false, // true : strictly positive
+					true, // true : strictly positive
 //					Arrays.asList(1d, 100d), 
 //					Arrays.asList(new GeographicDistanceCalculator(), new EuclidianDistanceCalculator()), 
 //					-0.4, -.0404);		
@@ -181,7 +209,6 @@ public class FGMCopulaGLModelTest {
 			((DistanceLinkFunctionCopulaExpression) distanceCopula).setBounds(0, new ParameterBound(null, 0d));
 //			((DistanceLinkFunctionCopulaExpression) distanceCopula).setBounds(1, new ParameterBound(null, 0d));
 			FGMCopulaGLModel copulaModel = new FGMCopulaGLModel(glm, distanceCopula);
-			copulaModel.getEstimator().setVerboseEnabled(true);;
 			copulaModel.setConvergenceCriterion(1E-8);
 //			copulaModel.gridSearch(copulaModel.getParameters().m_iRows - 1, -.5, -.1, .1);
 			copulaModel.doEstimation();

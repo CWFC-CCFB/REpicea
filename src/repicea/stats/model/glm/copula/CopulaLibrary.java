@@ -22,7 +22,6 @@ package repicea.stats.model.glm.copula;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import repicea.math.Matrix;
 import repicea.math.ParameterBound;
@@ -227,28 +226,17 @@ public class CopulaLibrary {
 		@Override
 		protected boolean setX(int indexFirstObservation, int indexSecondObservation) {
 			int offset = isInterceptEnabled ? 1 : 0;
-//			for (int dType = 0; dType < data.getDistancesBetweenObservations().size(); dType++) {
 			for (int dType = 0; dType < this.nbDistanceTypes; dType++) {
 				double dist = this.data.getDistancesBetweenObservations(dType, indexFirstObservation, indexSecondObservation);
-				if (Double.isInfinite(dist)) {		// FIXME this might be obsolete
-					return false;
-				} else {
+//				if (Double.isInfinite(dist)) {		// FIXME this might be obsolete
+//					return false;
+//				} else {
 					getOriginalFunction().setVariableValue(dType + offset, dist);
-				}
+//				}
 			}
-			return true;
+			return true;	// TODO The method could eventually return void. MF2021-12-13
 		}
 		
-//		private double calculateDistance(int distanceType, int indexFirstObservation, int indexSecondObservation) {
-//			Map<Integer, Double> oMap = data.getDistancesBetweenObservations().get(distanceType).get(indexFirstObservation);
-//			if (oMap != null) {
-//				Double distance = oMap.get(indexSecondObservation);
-//				if (distance != null) {
-//					return distance;
-//				}
-//			}
-//			return Double.POSITIVE_INFINITY;
-//		}
 		
 		@Override
 		public int getNumberOfVariables() {return getOriginalFunction().getNumberOfVariables();}
@@ -263,9 +251,6 @@ public class CopulaLibrary {
 			super.initialize(model, data);
 			List<List<String>> distanceParameterization = new ArrayList<List<String>>();
 			List<String> distanceTypes = ObjectUtility.decomposeUsingToken(distanceFieldsEnumeration, ",");
-//			if (distanceTypes.size() != this.getBeta().m_iRows) {
-//				throw new InvalidParameterException("Expected " + getBeta().m_iRows + " distance types instead of the " + distanceTypes.size() + " specified!");
-//			}
 			for (String type : distanceTypes) {
 				distanceParameterization.add(ObjectUtility.decomposeUsingToken(type, "+"));
 			}
@@ -277,9 +262,9 @@ public class CopulaLibrary {
 				if (distCalculators != null) {
 					this.data.setDistanceCalculators(distCalculators);
 				}
-				if (!distanceLimits.isEmpty()) {
-					this.data.setDistanceLimits(distanceLimits);
-				}
+//				if (!distanceLimits.isEmpty()) {
+//					this.data.setDistanceLimits(distanceLimits);
+//				}
 //				this.data.getDistancesBetweenObservations(); should not have to run this it will be run on the fly later on
 			}
 		}

@@ -33,10 +33,5 @@ public interface Estimator {
 	 */
 	public Estimate<?> getParameterEstimates();
 
-	/**
-	 * Enable/disable verbose
-	 * @param bool
-	 */
-	public void setVerboseEnabled(boolean bool);
 	
 }
